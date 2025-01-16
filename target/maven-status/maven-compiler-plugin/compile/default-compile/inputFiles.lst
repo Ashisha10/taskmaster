@@ -2,4 +2,5 @@
 /Users/ashisha/ideaProjects/taskmaster/src/main/java/com/wellness360/taskmanager/Application.java
 /Users/ashisha/ideaProjects/taskmaster/src/main/java/com/wellness360/taskmanager/repository/TaskRepository.java
 /Users/ashisha/ideaProjects/taskmaster/src/main/java/com/wellness360/taskmanager/dto/Task.java
+/Users/ashisha/ideaProjects/taskmaster/src/main/java/com/wellness360/taskmanager/config/MetricsConfig.java
 /Users/ashisha/ideaProjects/taskmaster/src/main/java/com/wellness360/taskmanager/service/TaskService.java
