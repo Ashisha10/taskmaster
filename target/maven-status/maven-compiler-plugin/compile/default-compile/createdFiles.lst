@@ -1,0 +1,5 @@
+com/wellness360/taskmanager/controller/TaskController.class
+com/wellness360/taskmanager/service/TaskService.class
+com/wellness360/taskmanager/Application.class
+com/wellness360/taskmanager/repository/TaskRepository.class
+com/wellness360/taskmanager/dto/Task.class
