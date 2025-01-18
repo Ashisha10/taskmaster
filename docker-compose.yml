@@ -4,7 +4,8 @@ services:
   taskmaster:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile  # Your Dockerfile location
+    image: 241533153259.dkr.ecr.us-west-1.amazonaws.com/testmaster-ecr-repo:latest
     ports:
       - "8080:8080"
     networks:
