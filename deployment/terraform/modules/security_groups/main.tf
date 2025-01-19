@@ -1,5 +1,5 @@
 resource "aws_security_group" "ecs" {
-  name_prefix = "${var.env}-ecs"
+  name_prefix = "${var.environment}-ecs"
   vpc_id      = var.vpc_id
 
   egress {

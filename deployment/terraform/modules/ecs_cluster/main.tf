@@ -1,8 +1,8 @@
 resource "aws_ecs_cluster" "this" {
-  name = var.cluster_name
+  name = "${var.cluster_name}-${var.environment}"
 
   tags = {
-    Name = var.cluster_name
+    Name = "${var.cluster_name}-${var.environment}"
   }
 }
 

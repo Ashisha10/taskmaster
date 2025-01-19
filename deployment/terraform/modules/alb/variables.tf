@@ -1,3 +1,4 @@
+
 variable "vpc_id" {
   description = "VPC ID"
   type        = string
@@ -9,7 +10,7 @@ variable "public_subnet_ids" {
 }
 
 variable "alb_name" {
-  description = "Application Load Balancer name"
+  description = "Base name for the Application Load Balancer"
   type        = string
 }
 
@@ -24,11 +25,17 @@ variable "container_port" {
 }
 
 variable "target_group_name" {
-  description = "Target Group name for ALB"
+  description = "Base name for the Target Group"
   type        = string
 }
 
 variable "security_groups" {
   description = "Security group IDs"
   type        = list(string)
+}
+
+# New variable for environment name
+variable "environment" {
+  description = "The environment name (e.g., dev, stage, prod)"
+  type        = string
 }

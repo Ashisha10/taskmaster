@@ -17,3 +17,8 @@ variable "container_port" {
   description = "Container port"
   type        = number
 }
+
+variable "environment" {
+  description = "The environment name (e.g., dev, stage, prod)"
+  type        = string
+}

@@ -5,7 +5,7 @@ resource "aws_vpc" "this" {
   enable_dns_hostnames = true
 
   tags = {
-    Name = "${var.env}-main"
+    Name = "${var.environment}-main"
   }
 }
 
@@ -18,7 +18,7 @@ resource "aws_subnet" "public" {
   availability_zone = var.azs[count.index]
 
   tags = {
-    Name = "${var.env}-public-${var.azs[count.index]}"
+    Name = "${var.environment}-public-${var.azs[count.index]}"
   }
 }
 
@@ -31,7 +31,7 @@ resource "aws_subnet" "private" {
   availability_zone = var.azs[count.index]
 
   tags = {
-    Name = "${var.env}-private-${var.azs[count.index]}"
+    Name = "${var.environment}-private-${var.azs[count.index]}"
   }
 }
 
@@ -58,8 +58,6 @@ resource "aws_route_table_association" "public" {
   subnet_id      = aws_subnet.public[count.index].id
   route_table_id = aws_route_table.public.id
 }
-
-#NAT Gateway is needed if we impl RDS or other resources which would require a private gateway for secure connection. 
 
 # Private Route Table (If you have a NAT Gateway or other routing, add it here)
 resource "aws_route_table" "private" {

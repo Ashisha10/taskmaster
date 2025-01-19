@@ -1,5 +1,5 @@
 resource "aws_ecs_service" "this" {
-  name            = "${var.cluster_name}-service"
+  name            = "${var.cluster_name}-${var.environment}-service"
   cluster         = var.cluster_name
   task_definition = var.task_definition
   desired_count   = 1

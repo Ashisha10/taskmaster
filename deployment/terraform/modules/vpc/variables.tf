@@ -18,7 +18,7 @@ variable "azs" {
   type        = list(string)
 }
 
-variable "env" {
+variable "environment" {
   description = "Environment name"
   type        = string
 }

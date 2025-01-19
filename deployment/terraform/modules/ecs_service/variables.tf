@@ -17,3 +17,8 @@ variable "security_groups" {
   description = "Security groups for ECS tasks"
   type        = list(string)
 }
+
+variable "environment" {
+  description = "The environment name (e.g., dev, stage, prod)"
+  type        = string
+}
