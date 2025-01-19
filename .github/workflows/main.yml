@@ -44,7 +44,7 @@ jobs:
           fi
 
       - name: Terraform Init
-        run: terraform init
+        run: terraform init -reconfigure
         working-directory: ${{ env.WORKING_DIR }}
 
       - name: Terraform Apply
