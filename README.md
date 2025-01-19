@@ -19,22 +19,35 @@ This project employs a comprehensive suite of DevOps tools and methodologies to 
 
 ## Root Directory Overview
 
-<img width="462" alt="root-dir-str" src="https://github.com/user-attachments/assets/1d9e8dab-33fe-4055-873a-6607a7295e8f" />
+<img src="https://github.com/user-attachments/assets/1d9e8dab-33fe-4055-873a-6607a7295e8f" alt="A diagram showing the root directory structure with files like Dockerfile, README.md, docker-compose.yml, and pom.xml for project organization." width="600" height="400" />
 
-- **Dockerfile**: Defines the steps for building the core application container image.
-- **README.md**: Serves as the primary documentation for onboarding and understanding the project.
-- **docker-compose.yml**: Facilitates local service orchestration for development and testing.
-- **pom.xml**: Functions as the parent POM for centralizing dependencies, plugins, and build configurations across modules, ensuring uniformity.
+This directory structure organizes the project's foundational files:
+- The `Dockerfile` specifies how to containerize the Spring Boot application.
+- The `README.md` serves as the central documentation for the project.
+- The `docker-compose.yml` file facilitates local service orchestration.
+- The `pom.xml` defines parent configurations for Maven builds.
 
 ### Significance of Root pom.xml
 
 The root `pom.xml` centralizes shared dependencies, plugin configurations, and build settings. As the parent for module-specific POMs, it ensures consistency across the project, minimizes redundancy, and resolves potential version conflicts.
 
 ## Application Directory Structure
-<img width="1286" alt="api tasks postman list all tasks" src="https://github.com/user-attachments/assets/687a1f54-d8c2-4c8a-b485-ae3bfd56443a" />
-<img width="1297" alt="list task by valid id" src="https://github.com/user-attachments/assets/b399bc04-a54d-4c25-801b-e0367e6075dd" />
-<img width="1290" alt="list task by invalid id" src="https://github.com/user-attachments/assets/ec107863-e847-4b9e-a9ee-7ef9da990666" />
 
+![Postman API screenshot showing tasks retrieved from an endpoint.](https://github.com/user-attachments/assets/687a1f54-d8c2-4c8a-b485-ae3bfd56443a)
+
+The above image demonstrates the response of the `/tasks` endpoint, which fetches a list of all tasks available in the system. This ensures the core application is functioning as expected when retrieving data from the backend.
+
+![Postman API screenshot showing a task fetched by valid ID.](https://github.com/user-attachments/assets/b399bc04-a54d-4c25-801b-e0367e6075dd)
+
+This image shows the API successfully returning details of a specific task when queried with a valid task ID. It verifies the application's ability to handle precise queries and return correct results.
+
+![Postman API screenshot showing an error message when fetching a task by an invalid ID.](https://github.com/user-attachments/assets/ec107863-e847-4b9e-a9ee-7ef9da990666)
+
+The screenshot above demonstrates the application's error-handling capabilities. When a task is requested with an invalid ID, the system returns a meaningful error message, ensuring a robust and user-friendly API experience.
+
+### Application Code Structure
+
+The `application/` directory contains:
 - **Dockerfile**: Creates a containerized environment for the Spring Boot application, guaranteeing consistency.
 - **pom.xml**: Manages dependencies and build settings specific to the application.
 - **prometheus.yml**: Configures Prometheus to monitor application metrics and set up alerting mechanisms.
@@ -50,14 +63,15 @@ The root `pom.xml` centralizes shared dependencies, plugin configurations, and b
 The `application/pom.xml` handles dependencies unique to the Spring Boot application, such as Spring Boot libraries, Prometheus integration, and database connectors. It extends the root `pom.xml`, inheriting shared configurations while incorporating application-specific requirements.
 
 ## Deployment Directory Structure
-<img width="240" alt="deploy dir str" src="https://github.com/user-attachments/assets/c67b3f76-e9fc-4244-9307-8978798530f7" />
 
-- **docker-compose.yml**: Defines multi-container setups for local development, including the application, databases, and other services.
-- **terraform**: Manages cloud infrastructure using IaC principles.
-- **Modules**: Encapsulates reusable infrastructure components, such as ALB, ECR, and ECS configurations.
-- **Environment-Specific Directories**: Isolates configurations for dev, staging, and production environments to prevent configuration drift.
+<img src="https://github.com/user-attachments/assets/c67b3f76-e9fc-4244-9307-8978798530f7" alt="A diagram showing the deployment directory structure with terraform, docker-compose.yml, and environment-specific configurations." width="400" height="250" />
 
-### Role of modules and tfvars in Terraform
+The deployment directory organizes resources for cloud provisioning and multi-container orchestration:
+- The `docker-compose.yml` file defines local multi-container setups for development.
+- The `terraform/` directory contains modularized Terraform configurations for infrastructure automation.
+- Environment-specific directories (e.g., dev, staging, prod) isolate configurations for each deployment stage, preventing configuration drift.
+
+### Role of Modules and tfvars in Terraform
 
 1. **Modules**
 
@@ -80,17 +94,20 @@ The `application/pom.xml` handles dependencies unique to the Spring Boot applica
    - **Scalability**: Simplifies the management of infrastructure across multiple environments and regions.
 
 ## Docker and CI/CD Pipeline Automation
-![flow](https://github.com/user-attachments/assets/9e83ee6e-5751-45e3-9067-1e766cf1e6c8)
+
+<img src="https://github.com/user-attachments/assets/9e83ee6e-5751-45e3-9067-1e766cf1e6c8" alt="A diagram showing the CI/CD workflow for automating Docker builds, tests, and deployments." width="800" height="600" />
 
 ### Docker and Image Automation
-<img width="1103" alt="docker build timing plots from docker console" src="https://github.com/user-attachments/assets/32b2d0cc-6869-46e8-af0d-39bf02e6b272" />
+
+![A console screenshot showing Docker build timings during image creation.](https://github.com/user-attachments/assets/32b2d0cc-6869-46e8-af0d-39bf02e6b272)
 
 Docker streamlines application packaging and deployment through containerization. The process includes:
 - **Image Creation**: The `Dockerfile` specifies instructions for building the application image, including dependency installation and environment setup.
 - **CI/CD Integration**: CI/CD tools such as GitHub Actions automate image creation and deployment, reducing manual intervention.
 
 ### GitHub Actions for CI/CD Automation
-<img width="1417" alt="cicd success deploy on github" src="https://github.com/user-attachments/assets/51c77903-4f1c-4d4f-a848-d92d39f32fb3" />
+
+![A GitHub Actions log showing successful build and deployment of the application.](https://github.com/user-attachments/assets/51c77903-4f1c-4d4f-a848-d92d39f32fb3)
 
 GitHub Actions simplifies the CI/CD process by enabling:
 - **Build Automation**: Automatically triggers Docker builds upon code commits.
@@ -102,17 +119,19 @@ This automation accelerates the development lifecycle, minimizes errors, and pro
 ## Monitoring and Visualization with Prometheus and Grafana
 
 ### Prometheus
-<img width="1434" alt="prometheus functioning on localhost:9090/targets" src="https://github.com/user-attachments/assets/f1c8f0ac-0848-4120-bfcc-d159e980690d" />
-<img width="1434" alt="prometheus up query result" src="https://github.com/user-attachments/assets/d2efccf3-6f14-4750-932d-420d05c35042" />
+![Prometheus functioning on localhost:9090/targets, displaying active targets for monitoring.](https://github.com/user-attachments/assets/f1c8f0ac-0848-4120-bfcc-d159e980690d)
+![Prometheus 'up' query result showing active targets status as 'up' (indicating successful data collection).](https://github.com/user-attachments/assets/d2efccf3-6f14-4750-932d-420d05c35042)
 
 Prometheus collects and analyzes performance metrics, such as response times, error rates, and resource utilization, from the Spring Boot application. Integration highlights include:
 - **Metrics Scraping**: Configured to collect data from the `/actuator/prometheus` endpoint.
 - **Alerting**: Enables proactive issue resolution through threshold-based alerts.
 
 ### Grafana
+![Grafana homepage at port 3030, showing the initial setup page with options for dashboard creation.](https://github.com/user-attachments/assets/7d7a0e3a-ddd2-4cb7-8720-c6da4dc5abad)
 
 Grafana provides visualization for Prometheus-collected metrics. While currently operational on port 3030, dashboards have yet to be configured. Future steps involve:
 - **Dashboard Creation**: Design visualizations for key metrics, including CPU usage, memory consumption, request latency, JVM statistics, and ECS health.
+
 
 ## Best Practices and Key Benefits
 
