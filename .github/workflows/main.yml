@@ -1,104 +1,62 @@
-name: Docker Image Build and Publish
+name: Terraform Apply & Docker Build
 
 on:
   push:
     branches:
       - test-dev
-      - test-stage
-      - main
 
 jobs:
-  build_and_deploy:
+  terraform:
     runs-on: ubuntu-latest
 
-    permissions:
-      id-token: write
-      contents: read
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_version: '1.5.5'
+
+    - name: Terraform Init
+      run: |
+        cd deployment/terraform/us-west-1/us-west-1-dev
+        terraform init
+
+    - name: Terraform Apply
+      run: |
+        cd deployment/terraform/us-west-1/us-west-1-dev
+        terraform apply -auto-approve
+
+    - name: Get ECR URL from Terraform output
+      id: ecr_output
+      run: |
+        cd deployment/terraform/us-west-1/us-west-1-dev
+        echo "ECR_REPO_URL=$(terraform output -raw ecr_repo_url)" >> $GITHUB_ENV
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: terraform
+    environment: dev
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+    - name: Checkout repository
+      uses: actions/checkout@v3
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_wrapper: false
+    - name: Log in to Amazon ECR
+      uses: aws-actions/amazon-ecr-login@v1
 
-      # Set working directory for Terraform based on branch
-      - name: Set working directory for Terraform based on branch
-        id: set-dir
-        run: |
-          case $GITHUB_REF in
-            'refs/heads/test-dev')
-              echo "WORKING_DIR=deployment/terraform/us-west-1/us-west-1-dev" >> $GITHUB_ENV
-              ;;
-            'refs/heads/test-stage')
-              echo "WORKING_DIR=deployment/terraform/us-west-1/us-west-1-stage" >> $GITHUB_ENV
-              ;;
-            'refs/heads/main')
-              echo "WORKING_DIR=deployment/terraform/us-west-1/us-west-1-prod" >> $GITHUB_ENV
-              ;;
-          esac
+    - name: Build Docker image
+      run: |
+        docker build -t $ECR_REPO_URL:latest .
 
-      # Initialize Terraform
-      - name: Terraform Init
-        run: terraform init -reconfigure
-        working-directory: ${{ env.WORKING_DIR }}
+    - name: Tag Docker image
+      run: |
+        docker tag $ECR_REPO_URL:latest $ECR_REPO_URL:latest
 
-      # Apply Terraform
-      - name: Terraform Apply
-        run: terraform apply -auto-approve -refresh=true
-        working-directory: ${{ env.WORKING_DIR }}
-
-      # Get ECR Repo URL from Terraform Output
-      - name: Get ECR Repo URL from Terraform Output
-        id: terraform-output
-        run: |
-          ECR_REPO_URL=$(terraform output -raw ecr_repo_url | sed 's/%$//') 
-          echo "ECR_REPO_URL=${ECR_REPO_URL}" >> $GITHUB_ENV
-
-      # Build Docker image
-      - name: Build Docker image
-        run: |
-          docker build -t ${ECR_REPO_URL}:${GITHUB_SHA} .
-          docker tag ${ECR_REPO_URL}:${GITHUB_SHA} ${ECR_REPO_URL}:latest
-
-      # Login to Amazon ECR
-      - name: Login to Amazon ECR
-        uses: aws-actions/amazon-ecr-login@v2
-
-      # Push Docker image to ECR
-      - name: Push Docker image to ECR
-        run: |
-          docker push ${ECR_REPO_URL}:${GITHUB_SHA}
-          docker push ${ECR_REPO_URL}:latest
-
-      # Create IAM User for ECS Task Execution Role
-      - name: Create IAM User for ECS Task Execution Role
-        run: |
-          aws iam create-user --user-name ecs-task-execution-role
-          aws iam attach-user-policy --user-name ecs-task-execution-role --policy-arn arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
-
-      # Update ECS Task Definition
-      - name: Update ECS Task Definition
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        with:
-          task-definition: ecs-task-definition.json
-          container-name: my-container
-          image: ${ECR_REPO_URL}:${GITHUB_SHA}
-
-      # Deploy to ECS
-      - name: Deploy to ECS
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
-        with:
-          task-definition: ${{ steps.update-task-def.outputs.task-definition }}
-          service: my-ecs-service
-          cluster: my-ecs-cluster
-          wait-for-service-stability: true
+    - name: Push Docker image to ECR
+      run: |
+        docker push $ECR_REPO_URL:latest
