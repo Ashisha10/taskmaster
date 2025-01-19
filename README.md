@@ -93,6 +93,20 @@ The deployment directory organizes resources for cloud provisioning and multi-co
    - **Resource Optimization**: Enables tailored configurations to account for regional service availability and pricing.
    - **Scalability**: Simplifies the management of infrastructure across multiple environments and regions.
 
+4. **Dynamic Naming for Flexible Resource Management**
+
+  - Terraform allows dynamic naming of resources using variables. This approach ensures that resource names are generated based on environment-specific values and other dynamic inputs. For example, variables like `${var.app_name}` or `${var.environment}` can be used to dynamically construct resource names.
+  - Example: 
+```bash
+  resource "aws_s3_bucket" "bucket" {
+  bucket = "${var.app_name}-${var.environment}-bucket"
+}
+```
+  - Here:
+`${var.app_name}` represents the application name (e.g., taskmaster).
+`${var.environment}` dynamically assigns the environment value (e.g., dev, staging, prod).
+  - This dynamic naming strategy helps avoid conflicts and simplifies resource management across environments.
+
 ## Docker and CI/CD Pipeline Automation
 
 <img src="https://github.com/user-attachments/assets/9e83ee6e-5751-45e3-9067-1e766cf1e6c8" alt="A diagram showing the CI/CD workflow for automating Docker builds, tests, and deployments." width="800" height="600" />
