@@ -1,9 +1,11 @@
+#this is dedicated to dev env for now, however dynamic environments are implementable.
+
 name: Terraform Apply & Docker Build
 
 on:
   push:
     branches:
-      - test-dev
+      - main
 
 jobs:
   aws:
