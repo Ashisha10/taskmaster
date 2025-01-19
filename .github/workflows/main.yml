@@ -32,11 +32,11 @@ jobs:
       - name: Terraform Init
         run: terraform init
         working-directory: ${{ github.workspace }}
-#
-#      - name: Terraform Apply
-#        run: terraform apply -auto-approve
-#        working-directory: ${{ github.workspace }}
-#
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
+        working-directory: ${{ github.workspace }}
+
 #      - name: Get ECR Repository Name from Terraform Output
 #        id: terraform-output
 #        run: |
