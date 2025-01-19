@@ -37,41 +37,41 @@ jobs:
         run: terraform apply -auto-approve
         working-directory: deployment/terraform/us-west-1/us-west-1-dev
 
-#      - name: Get ECR Repository Name from Terraform Output
-#        id: terraform-output
-#        run: |
-#          ECR_REPO_NAME=$(terraform output -raw ecr_repo_name)
-#          echo "ECR_REPO_NAME=${ECR_REPO_NAME}" >> $GITHUB_ENV
-#
-#      - name: Build Docker image
-#        run: |
-#          docker build -t ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO_NAME }}:${{ github.sha }} .
-#          docker tag ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO_NAME }}:${{ github.sha }} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO_NAME }}:latest
-#
-#      - name: Login to Amazon ECR
-#        uses: aws-actions/amazon-ecr-login@v2
-#
-#      - name: Push Docker image to ECR
-#        run: |
-#          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO_NAME }}:${{ github.sha }}
-#          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO_NAME }}:latest
-#
-#      - name: Create IAM User for ECS Task Execution Role
-#        run: |
-#          aws iam create-user --user-name ecs-task-execution-role
-#          aws iam attach-user-policy --user-name ecs-task-execution-role --policy-arn arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
-#
-#      - name: Update ECS Task Definition
-#        uses: aws-actions/amazon-ecs-render-task-definition@v1
-#        with:
-#          task-definition: ecs-task-definition.json
-#          container-name: my-container
-#          image: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO_NAME }}:${{ github.sha }}
-#
-#      - name: Deploy to ECS
-#        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
-#        with:
-#          task-definition: ${{ steps.update-task-def.outputs.task-definition }}
-#          service: my-ecs-service
-#          cluster: my-ecs-cluster
-#          wait-for-service-stability: true
+     - name: Get ECR Repository Name from Terraform Output
+       id: terraform-output
+       run: |
+         ECR_REPO_NAME=$(terraform output -raw ecr_repo_name)
+         echo "ECR_REPO_NAME=${ECR_REPO_NAME}" >> $GITHUB_ENV
+
+     - name: Build Docker image
+       run: |
+         docker build -t ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO_NAME }}:${{ github.sha }} .
+         docker tag ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO_NAME }}:${{ github.sha }} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO_NAME }}:latest
+
+     - name: Login to Amazon ECR
+       uses: aws-actions/amazon-ecr-login@v2
+
+     - name: Push Docker image to ECR
+       run: |
+         docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO_NAME }}:${{ github.sha }}
+         docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO_NAME }}:latest
+
+     - name: Create IAM User for ECS Task Execution Role
+       run: |
+         aws iam create-user --user-name ecs-task-execution-role
+         aws iam attach-user-policy --user-name ecs-task-execution-role --policy-arn arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+
+     - name: Update ECS Task Definition
+       uses: aws-actions/amazon-ecs-render-task-definition@v1
+       with:
+         task-definition: ecs-task-definition.json
+         container-name: my-container
+         image: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO_NAME }}:${{ github.sha }}
+
+     - name: Deploy to ECS
+       uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+       with:
+         task-definition: ${{ steps.update-task-def.outputs.task-definition }}
+         service: my-ecs-service
+         cluster: my-ecs-cluster
+         wait-for-service-stability: true
