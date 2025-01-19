@@ -54,3 +54,10 @@ jobs:
     - name: Push Docker Image to ECR
       run: |
         docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/taskmaster-repo-dev:latest
+    # Step to update the ECS Task Definition with the new image
+            
+    # Step to run terraform apply and trigger ECS service update with the new image
+    - name: Terraform Apply (ECS update)
+      run: |
+        cd deployment/terraform/us-west-1/us-west-1-dev
+        terraform apply -auto-approve
