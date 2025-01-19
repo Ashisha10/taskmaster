@@ -54,7 +54,7 @@ jobs:
       - name: Get ECR Repo URL from Terraform Output
         id: terraform-output
         run: |
-          ECR_REPO_URL=$(terraform output -raw ecr_repo_url | sed 's/%$//'))
+          ECR_REPO_URL=$(terraform output -raw ecr_repo_url | sed 's/%$//') 
           echo "ECR_REPO_URL=${ECR_REPO_URL}" >> $GITHUB_ENV
 
       # Build Docker image
