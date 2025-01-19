@@ -44,11 +44,14 @@ jobs:
         cd deployment/terraform/us-west-1/us-west-1-dev
         terraform apply -auto-approve
 
-    - name: Get ECR URL from Terraform output
+    - name: Get ECR URL from Terraform output and clean it
       id: ecr_output
       run: |
         cd deployment/terraform/us-west-1/us-west-1-dev
-        echo "ECR_REPO_URL=$(terraform output -raw ecr_repo_url)" >> $GITHUB_ENV
+        ECR_REPO_URL=$(terraform output -raw ecr_repo_url)
+        ECR_REPO_URL=$(printf "%s" "$ECR_REPO_URL" | sed 's/%$//')
+        echo "ECR_REPO_URL=$ECR_REPO_URL" >> $GITHUB_ENV
+        echo "ECR_REPO_URL=$ECR_REPO_URL"
 
   docker:
     runs-on: ubuntu-latest
