@@ -3,7 +3,9 @@ name: Docker Image Build and Publish
 on:
   push:
     branches:
-      - test-branch
+      - test-dev
+      - test-stage
+      - main
 
 jobs:
   build_and_deploy:
@@ -29,49 +31,65 @@ jobs:
         with:
           terraform_wrapper: false
 
+      # Define different working directories for each environment based on branch
+      - name: Set working directory for Terraform based on branch
+        id: set-dir
+        run: |
+          if [[ $GITHUB_REF == 'refs/heads/test-dev' ]]; then
+            echo "WORKING_DIR=deployment/terraform/us-west-1/us-west-1-dev" >> $GITHUB_ENV
+          elif [[ $GITHUB_REF == 'refs/heads/test-stage' ]]; then
+            echo "WORKING_DIR=deployment/terraform/us-west-1/us-west-1-stage" >> $GITHUB_ENV
+          elif [[ $GITHUB_REF == 'refs/heads/main' ]]; then
+            echo "WORKING_DIR=deployment/terraform/us-west-1/us-west-1-prod" >> $GITHUB_ENV
+          fi
+
       - name: Terraform Init
         run: terraform init
-        working-directory: deployment/terraform/us-west-1/us-west-1-dev
+        working-directory: ${{ env.WORKING_DIR }}
 
       - name: Terraform Apply
         run: terraform apply -auto-approve
-        working-directory: deployment/terraform/us-west-1/us-west-1-dev
+        working-directory: ${{ env.WORKING_DIR }}
 
-      - name: Get ECR Repository Name from Terraform Output
+      - name: Get ECR Repo URL from Terraform Output
         id: terraform-output
         run: |
           ECR_REPO_URL=$(terraform output -raw ecr_repo_url)
           echo "ECR_REPO_URL=${ECR_REPO_URL}" >> $GITHUB_ENV
 
+      # Build Docker image
       - name: Build Docker image
         run: |
-         docker build -t ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO_NAME }}:${{ github.sha }} .
-         docker tag ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO_NAME }}:${{ github.sha }} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO_NAME }}:latest
+          docker build -t ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO_URL }}:${{ github.sha }} .
+          docker tag ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO_URL }}:${{ github.sha }} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO_URL }}:latest
 
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Push Docker image to ECR
         run: |
-         docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO_NAME }}:${{ github.sha }}
-         docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO_NAME }}:latest
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO_URL }}:${{ github.sha }}
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO_URL }}:latest
 
+      # Create IAM User for ECS Task Execution Role
       - name: Create IAM User for ECS Task Execution Role
         run: |
-         aws iam create-user --user-name ecs-task-execution-role
-         aws iam attach-user-policy --user-name ecs-task-execution-role --policy-arn arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+          aws iam create-user --user-name ecs-task-execution-role
+          aws iam attach-user-policy --user-name ecs-task-execution-role --policy-arn arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
 
+      # Update ECS Task Definition
       - name: Update ECS Task Definition
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
-         task-definition: ecs-task-definition.json
-         container-name: my-container
-         image: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO_NAME }}:${{ github.sha }}
+          task-definition: ecs-task-definition.json
+          container-name: my-container
+          image: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO_URL }}:${{ github.sha }}
 
+      # Deploy to ECS
       - name: Deploy to ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
         with:
-         task-definition: ${{ steps.update-task-def.outputs.task-definition }}
-         service: my-ecs-service
-         cluster: my-ecs-cluster
-         wait-for-service-stability: true
+          task-definition: ${{ steps.update-task-def.outputs.task-definition }}
+          service: my-ecs-service
+          cluster: my-ecs-cluster
+          wait-for-service-stability: true
