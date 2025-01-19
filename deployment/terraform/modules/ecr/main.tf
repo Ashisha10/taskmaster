@@ -13,5 +13,6 @@ output "ecr_repo_url" {
 }
 
 output "ecr_repo_name" {
-  value = aws_ecr_repository.this
+  value = aws_ecr_repository.this.name
 }
+
