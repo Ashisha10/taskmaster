@@ -1,26 +1,31 @@
-# Build stage
-FROM maven:3.9.9-amazoncorretto-17-alpine as builder
+# Use the Maven image for building the application
+FROM maven:3.9.9-amazoncorretto-17-alpine AS builder
 
+# Set the working directory inside the container
 WORKDIR /app
 
-# Copy pom.xml and download dependencies without building the app
-COPY pom.xml ./
-RUN mvn dependency:go-offline
+# Copy the root pom.xml and application submodule pom.xml into the container
+COPY pom.xml ./pom.xml
+COPY application/pom.xml ./application/pom.xml
 
-# Copy source code and build the app
-COPY src ./src
+# Copy the source code of the application submodule
+COPY application/src ./application/src
+
+# Run Maven dependency resolution and build
+RUN mvn dependency:go-offline
 RUN mvn clean package -DskipTests
 
-# Runtime stage
+# Runtime image based on distroless Java 17 image
 FROM gcr.io/distroless/java17-debian11:latest
 
+# Set the working directory inside the container
 WORKDIR /app
 
-# Copy the generated JAR from the builder stage
-COPY --from=builder /app/target/*.jar app.jar
+# Copy the packaged JAR file from the builder stage
+COPY --from=builder /app/application/target/application-0.0.1-SNAPSHOT.jar app.jar
 
-# Expose the app's port
+# Expose the application port (default 8080)
 EXPOSE 8080
 
-# Run the Spring Boot application
+# Run the application
 ENTRYPOINT ["java", "-jar", "app.jar"]
