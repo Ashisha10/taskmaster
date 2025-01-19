@@ -31,26 +31,33 @@ jobs:
         with:
           terraform_wrapper: false
 
-      # Define different working directories for each environment based on branch
+      # Set working directory for Terraform based on branch
       - name: Set working directory for Terraform based on branch
         id: set-dir
         run: |
-          if [[ $GITHUB_REF == 'refs/heads/test-dev' ]]; then
-            echo "WORKING_DIR=deployment/terraform/us-west-1/us-west-1-dev" >> $GITHUB_ENV
-          elif [[ $GITHUB_REF == 'refs/heads/test-stage' ]]; then
-            echo "WORKING_DIR=deployment/terraform/us-west-1/us-west-1-stage" >> $GITHUB_ENV
-          elif [[ $GITHUB_REF == 'refs/heads/main' ]]; then
-            echo "WORKING_DIR=deployment/terraform/us-west-1/us-west-1-prod" >> $GITHUB_ENV
-          fi
+          case $GITHUB_REF in
+            'refs/heads/test-dev')
+              echo "WORKING_DIR=deployment/terraform/us-west-1/us-west-1-dev" >> $GITHUB_ENV
+              ;;
+            'refs/heads/test-stage')
+              echo "WORKING_DIR=deployment/terraform/us-west-1/us-west-1-stage" >> $GITHUB_ENV
+              ;;
+            'refs/heads/main')
+              echo "WORKING_DIR=deployment/terraform/us-west-1/us-west-1-prod" >> $GITHUB_ENV
+              ;;
+          esac
 
+      # Initialize Terraform
       - name: Terraform Init
         run: terraform init -reconfigure
         working-directory: ${{ env.WORKING_DIR }}
 
+      # Apply Terraform
       - name: Terraform Apply
         run: terraform apply -auto-approve -refresh=true
         working-directory: ${{ env.WORKING_DIR }}
 
+      # Get ECR Repo URL from Terraform Output
       - name: Get ECR Repo URL from Terraform Output
         id: terraform-output
         run: |
@@ -63,9 +70,11 @@ jobs:
           docker build -t ${ECR_REPO_URL}:${GITHUB_SHA} .
           docker tag ${ECR_REPO_URL}:${GITHUB_SHA} ${ECR_REPO_URL}:latest
 
+      # Login to Amazon ECR
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
+      # Push Docker image to ECR
       - name: Push Docker image to ECR
         run: |
           docker push ${ECR_REPO_URL}:${GITHUB_SHA}
