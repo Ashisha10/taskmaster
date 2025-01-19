@@ -49,13 +49,12 @@ jobs:
 
       - name: Terraform Apply
         run: terraform apply -auto-approve -refresh=true
-             terraform output ecr_repo_url
         working-directory: ${{ env.WORKING_DIR }}
 
       - name: Get ECR Repo URL from Terraform Output
         id: terraform-output
         run: |
-          ECR_REPO_URL=$(terraform output -raw ecr_repo_url)
+          ECR_REPO_URL=$(terraform output -raw ecr_repo_url | sed 's/%$//'))
           echo "ECR_REPO_URL=${ECR_REPO_URL}" >> $GITHUB_ENV
 
       # Build Docker image
