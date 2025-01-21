@@ -2,7 +2,8 @@ variable "task_family" {
   description = "Task family name"
   type        = string
 }
-
+variable "ecs_task_execution_role" {}
+variable "ecs_task_role" {}
 variable "container_name" {
   description = "Container name"
   type        = string

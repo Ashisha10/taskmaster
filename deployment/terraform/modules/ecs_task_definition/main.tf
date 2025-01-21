@@ -1,6 +1,8 @@
 # aws_ecs_task_definition resource
 resource "aws_ecs_task_definition" "this" {
-  family                   = "${var.task_family}-${var.environment}"  # Append environment to family name
+  family                   = "${var.task_family}-${var.environment}"
+  execution_role_arn       = var.ecs_task_execution_role
+  task_role_arn            = var.ecs_task_role
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   memory                   = "512"        # Memory in MiB (512, 1024, etc.)
