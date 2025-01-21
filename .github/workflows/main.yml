@@ -45,7 +45,7 @@ jobs:
 
     - name: Build Docker Image
       run: |
-        docker build --platform linux/amd64 -t taskmaster-repo-dev .
+        docker build --platform linux/amd64 --no-cache -t taskmaster-repo-dev .
 
     - name: Tag Docker Image
       run: |
@@ -55,9 +55,11 @@ jobs:
       run: |
         docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/taskmaster-repo-dev:latest
     # Step to update the ECS Task Definition with the new image
-            
-    # Step to run terraform apply and trigger ECS service update with the new image
-    - name: Terraform Apply (ECS update)
+
+    - name: Update ECS Service
       run: |
-        cd deployment/terraform/us-west-1/us-west-1-dev
-        terraform apply -auto-approve
+        aws ecs update-service \
+          --cluster taskmaster-cluster-dev \
+          --service taskmaster-cluster-dev-dev-service \
+          --task-definition taskmaster-task-dev \
+          --region ${{ secrets.AWS_REGION }}
