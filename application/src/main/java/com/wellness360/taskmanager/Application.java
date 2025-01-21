@@ -6,7 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ComponentScan;
 
 @SpringBootApplication
-//@ComponentScan(basePackages = {"com.wellness360.taskmanager.controller", "com.wellness360.taskmanager.service"})
+@ComponentScan(basePackages = {"com.wellness360.taskmanager.controller", "com.wellness360.taskmanager.service"})
 public class Application {
     public static void main(String[] args) {
         SpringApplication.run(Application.class, args);
