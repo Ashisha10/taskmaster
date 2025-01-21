@@ -26,6 +26,8 @@ COPY --from=builder /app/application/target/application-0.0.1-SNAPSHOT.jar app.j
 
 # Expose the application port (default 8080)
 EXPOSE 8080
+EXPOSE 9090  # Prometheus
+EXPOSE 3000  # Grafana
 
 # Run the application
 ENTRYPOINT ["java", "-jar", "app.jar"]
