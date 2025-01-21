@@ -63,3 +63,4 @@ jobs:
       run: |
         cd deployment/terraform/us-west-1/us-west-1-dev
         terraform apply -auto-approve
+        
