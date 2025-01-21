@@ -47,7 +47,7 @@ jobs:
 
     - name: Build Docker Image
       run: |
-        docker build -t taskmaster-repo-dev .
+        docker buildx build --platform linux/amd64 -t taskmaster-repo-dev .
 
     - name: Tag Docker Image
       run: |
