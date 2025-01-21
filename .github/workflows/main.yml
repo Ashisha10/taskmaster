@@ -1,3 +1,5 @@
+#this is dedicated to dev env for now, however dynamic environments are implementable.
+
 name: Terraform Apply & Docker Build
 
 on:
@@ -38,15 +40,6 @@ jobs:
       run: |
         cd deployment/terraform/us-west-1/us-west-1-dev
         terraform apply -auto-approve
-        - name: Set up Maven
-          uses: actions/setup-java@v3
-          with:
-            java-version: '17'
-            distribution: 'adoptopenjdk'
-
-    - name: Build Spring Boot application with Maven
-      run: |
-        mvn clean install
 
     - name: Retrieve ECR authentication token and login to Docker
       run: |
@@ -54,7 +47,7 @@ jobs:
 
     - name: Build Docker Image
       run: |
-        docker build --platform linux/amd64 -t taskmaster-repo-dev .
+        docker build -t taskmaster-repo-dev .
 
     - name: Tag Docker Image
       run: |
