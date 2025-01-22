@@ -76,5 +76,6 @@ jobs:
          aws ecs update-service \
          --cluster taskmaster-dev-cluster \
          --service taskmaster-service \
+         --region us-west-1
          --force-new-deployment
         
