@@ -1,21 +1,32 @@
-# Use an official OpenJDK runtime as a parent image
-FROM  openjdk:17-jdk-slim
+# Stage 1: Builder - Use Amazon Linux with Maven and Corretto JDK
+FROM maven:3.9.9-amazoncorretto-17-alpine AS builder
 
-# Set the working directory in the container
+# Set the working directory inside the container
 WORKDIR /app
 
-# Copy the Spring Boot application JAR from the application module to the container
-COPY application/target/application-0.0.1-SNAPSHOT.jar /app/application.jar
+# Copy the root pom.xml and application submodule pom.xml into the container
+COPY pom.xml ./pom.xml
+COPY application/pom.xml ./application/pom.xml
+COPY prometheus.yml /etc/prometheus/prometheus.yml
 
-# Expose port 8080 for the application
-EXPOSE 8080
+# Copy the source code of the application submodule
+COPY application/src ./application/src
 
-# Expose the Prometheus port
-EXPOSE 9090
+# Run Maven dependency resolution and build
+RUN mvn dependency:go-offline
+RUN mvn clean package -DskipTests
 
-# Expose the Grafana port
-EXPOSE 3000
+# Stage 2: Runtime - Use Amazon Linux for running the application
+FROM gcr.io/distroless/java17-debian11:latest
 
+# Set the working directory inside the container
+WORKDIR /app
+
+# Copy the packaged JAR file from the builder stage
+COPY --from=builder /app/application/target/application-0.0.1-SNAPSHOT.jar app.jar
+
+# Expose the application port (default 8080)
+EXPOSE 8080 9090 3000
 
 # Run the application
-ENTRYPOINT ["java", "-jar", "/app/application.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar"]

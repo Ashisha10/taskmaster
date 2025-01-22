@@ -8,3 +8,7 @@ scrape_configs:
     scrape_interval: 5s  # Custom scrape interval for this job
     static_configs:
       - targets: ['taskmaster:8080']  # Replace with your application's endpoint
+
+  - job_name: 'grafana'
+    static_configs:
+      - targets: ['taskmaster:3000']

@@ -17,7 +17,7 @@ services:
     image: prom/prometheus:latest
     container_name: prometheus
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus.yml:/prometheus/prometheus.yml
     ports:
       - "9090:9090"
     command:
@@ -42,3 +42,4 @@ networks:
 
 volumes:
   grafana-data:
+

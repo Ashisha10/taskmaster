@@ -15,7 +15,6 @@ module "security_groups" {
   environment = var.environment
 }
 
-
 # Call the ECR module
 module "ecr" {
   source              = "../../modules/ecr"
@@ -35,9 +34,11 @@ module "ecs_task_definition" {
   source              = "../../modules/ecs_task_definition"
   task_family         = var.task_family
   container_name      = var.container_name
-  image               = var.image
+  image = module.ecr.ecr_repo_url
   container_port      = var.container_port
   environment         = var.environment
+  ecs_task_execution_role  = "arn:aws:iam::241533153259:role/ecs-task-execution-role" # Pass the execution role ARN here
+  ecs_task_role            = "arn:aws:iam::241533153259:role/ecs-task-role"
 }
 
 # Call the ECS Service module

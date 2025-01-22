@@ -15,7 +15,6 @@ module "security_groups" {
   environment = var.environment
 }
 
-
 # Call the ECR module
 module "ecr" {
   source              = "../../modules/ecr"
@@ -33,6 +32,8 @@ module "ecs_cluster" {
 # Call the ECS Task Definition module
 module "ecs_task_definition" {
   source              = "../../modules/ecs_task_definition"
+  ecs_task_execution_role  = "arn:aws:iam::241533153259:role/ecs-task-execution-role" # Pass the execution role ARN here
+  ecs_task_role            = "arn:aws:iam::241533153259:role/ecs-task-role"
   task_family         = var.task_family
   container_name      = var.container_name
   image               = var.image
@@ -51,11 +52,11 @@ module "ecs_service" {
 }
 
 # Outputs
-output "dev_vpc_id" {
+output "prod_vpc_id" {
   value = module.vpc.vpc_id
 }
 
-output "dev_public_subnet_ids" {
+output "prod_public_subnet_ids" {
   value = module.vpc.public_subnet_ids
 }
 

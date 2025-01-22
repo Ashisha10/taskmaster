@@ -4,5 +4,6 @@ terraform {
     key    = "state/terraform.tfstate"
     region = "us-west-1"
     encrypt = true
+    dynamodb_table = "taskmaster-stage-locks"
   }
 }

@@ -1,58 +1,101 @@
-name: Terraform Apply & Docker Build
+name: Deploy to Amazon ECS
 
 on:
   push:
-    branches:
-      - main
+    branches: [ "main" ]
+
+env:
+  AWS_REGION: us-west-1                          # Set this to your AWS region
+  ECR_REPOSITORY: taskmaster-repo-prod           # Set this to your Amazon ECR repository name for production
+  ECS_SERVICE: taskmaster-cluster-prod-prod-service  # Set this to your Amazon ECS service name for production
+  ECS_CLUSTER: taskmaster-cluster-prod           # Set this to your ECS cluster name for production
+  CONTAINER_NAME: taskmaster-container-prod      # Set this to the name of the container in the containerDefinitions section of your task definition
+
+permissions:
+  contents: read
 
 jobs:
-  aws:
+  deploy:
+    name: Deploy
     runs-on: ubuntu-latest
-
-    permissions:
-      id-token: write
-      contents: read
+    environment: production
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+    - name: Checkout
+      uses: actions/checkout@v4
 
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v2
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ secrets.AWS_REGION }}
-      
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v2
-      with:
-        terraform_version: '1.5.5'
+        aws-region: ${{ env.AWS_REGION }}
 
-    - name: Terraform Init
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+
+    - name: Build, tag, and push image to Amazon ECR
+      id: build-image
+      env:
+        IMAGE_TAG: ${{ github.sha }}  # Use the commit SHA as the image tag
       run: |
-        cd deployment/terraform/us-west-1/us-west-1-dev
-        terraform init
-    - name: Terraform Apply
+        # Hardcoded ECR registry and repository details for production
+        ECR_REGISTRY="241533153259.dkr.ecr.us-west-1.amazonaws.com"
+        ECR_REPOSITORY="taskmaster-repo-prod"
+    
+        # Build the Docker image
+        docker buildx build --platform linux/amd64 -t $ECR_REPOSITORY:$IMAGE_TAG .
+    
+        # Tag the image for ECR
+        docker tag $ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+    
+        # Push the image to ECR
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+    
+        # Echo the image tag to GitHub Actions output
+        echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+    - name: Render ECS task definition with the new image
+      id: task-def
       run: |
-        cd deployment/terraform/us-west-1/us-west-1-dev
-        terraform apply -auto-approve
-    - name: Retrieve ECR authentication token and login to Docker
+        cat <<EOL > ecs-task-definition.json
+        {
+          "family": "taskmaster-task-prod",
+          "executionRoleArn": "arn:aws:iam::241533153259:role/ecs-task-execution-role",
+          "taskRoleArn": "arn:aws:iam::241533153259:role/ecs-task-role",
+          "networkMode": "awsvpc",
+          "requiresCompatibilities": [
+            "FARGATE"
+          ],
+          "memory": "512",
+          "cpu": "256",
+          "containerDefinitions": [
+            {
+              "name": "taskmaster-container-prod",
+              "image": "${{ steps.build-image.outputs.image }}",
+              "essential": true,
+              "portMappings": [
+                {
+                  "containerPort": 8080,
+                  "hostPort": 8080,
+                  "protocol": "tcp"
+                }
+              ]
+            }
+          ]
+        }
+        EOL
+
+    - name: Register ECS task definition
       run: |
-        aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
-    - name: Build Docker Image
-      run: |
-        docker buildx build --platform linux/amd64 -t taskmaster-repo-dev .
-    - name: Tag Docker Image
-      run: |
-        docker tag taskmaster-repo-dev:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/taskmaster-repo-dev:latest
-    - name: Push Docker Image to ECR
-      run: |
-        docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/taskmaster-repo-dev:latest
-    # Step to update the ECS Task Definition with the new image
-            
-    # Step to run terraform apply and trigger ECS service update with the new image
-    - name: Terraform Apply (ECS update)
-      run: |
-        cd deployment/terraform/us-west-1/us-west-1-dev
-        terraform apply -auto-approve
+        aws ecs register-task-definition \
+          --cli-input-json file://ecs-task-definition.json
+
+    - name: Deploy ECS service with new task definition
+      uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+      with:
+        task-definition: ecs-task-definition.json
+        service: ${{ env.ECS_SERVICE }}
+        cluster: ${{ env.ECS_CLUSTER }}
+        wait-for-service-stability: true
