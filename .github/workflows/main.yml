@@ -61,6 +61,16 @@ jobs:
       - name: Build Docker Image
         run: |
           docker buildx build --platform linux/amd64 -t taskmaster-repo-dev .
+          
+    # Step 6: Docker Compose Up (start all services)
+      - name: Start services with Docker Compose
+        run: |
+          docker-compose -f docker-compose.yml up -d
+
+    # Step 7: Run Docker Compose (optional: check container status)
+      - name: Check Docker Compose Status
+        run: |
+          docker-compose ps
 
       - name: Tag Docker Image
         run: |
@@ -70,12 +80,34 @@ jobs:
         run: |
           docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/taskmaster-repo-dev:latest
 
-      - name: Terraform Apply (ECS update)
+  # Job 1: Checkout Repository
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+    # Step 2: Set up AWS credentials and configure Terraform
+      - name:  Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: '1.5.5'
+
+    # Step 3: Terraform init and apply for deployment
+      - name:  Terraform Init
         run: |
-         cd deployment/terraform/us-west-1/us-west-1-dev
-         aws ecs update-service \
-         --cluster taskmaster-dev-cluster \
-         --service taskmaster-service \
-         --region us-west-1
-         --force-new-deployment
+          cd deployment/terraform/us-west-1/us-west-1-dev
+          terraform init
+
+      - name: Terraform Apply
+        run: |
+          cd deployment/terraform/us-west-1/us-west-1-dev
+          terraform apply -auto-approve
         
