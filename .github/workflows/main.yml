@@ -61,16 +61,6 @@ jobs:
       - name: Build Docker Image
         run: |
           docker buildx build --platform linux/amd64 -t taskmaster-repo-dev .
-          
-    # Step 6: Docker Compose Up (start all services)
-      - name: Start services with Docker Compose
-        run: |
-          docker-compose -f docker-compose.yml up -d
-
-    # Step 7: Run Docker Compose (optional: check container status)
-      - name: Check Docker Compose Status
-        run: |
-          docker-compose ps
 
       - name: Tag Docker Image
         run: |
