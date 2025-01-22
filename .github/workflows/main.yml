@@ -1,4 +1,4 @@
-name: Deploy Dev Environment
+name: Terraform Apply & Docker Build
 
 on:
   push:
@@ -6,83 +6,53 @@ on:
       - main
 
 jobs:
-  # Job 1: Checkout Repository
-  checkout:
+  aws:
     runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+    - name: Checkout repository
+      uses: actions/checkout@v3
 
-  # Job 2: AWS and Terraform (Combined)
-  aws-terraform:
-    runs-on: ubuntu-latest
-    needs: checkout
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+      
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_version: '1.5.5'
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_version: '1.5.5'
-
-      - name: Terraform Init and Apply
-        run: |
-          cd deployment/terraform/us-west-1/us-west-1-dev
-          terraform init
-          terraform apply -auto-approve
-
-  # Job 3: Docker Build and Push
-  docker-build:
-    runs-on: ubuntu-latest
-    needs: aws-terraform
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-
-      - name: Retrieve ECR authentication token and login to Docker
-        run: |
-          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
-
-      - name: Build Docker Image
-        run: |
-          docker buildx build --platform linux/amd64 -t taskmaster-repo-dev .
-
-      - name: Tag Docker Image
-        run: |
-          docker tag taskmaster-repo-dev:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/taskmaster-repo-dev:latest
-
-      - name: Push Docker Image to ECR
-        run: |
-          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/taskmaster-repo-dev:latest
-          
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_version: '1.5.5'
-          
-      - name:  Terraform Init
-        run: |
-          cd deployment/terraform/us-west-1/us-west-1-dev
-          terraform init
-
-      - name: Terraform Apply
-        run: |
-          cd deployment/terraform/us-west-1/us-west-1-dev
-          terraform apply -auto-approve
-        
+    - name: Terraform Init
+      run: |
+        cd deployment/terraform/us-west-1/us-west-1-dev
+        terraform init
+    - name: Terraform Apply
+      run: |
+        cd deployment/terraform/us-west-1/us-west-1-dev
+        terraform apply -auto-approve
+    - name: Retrieve ECR authentication token and login to Docker
+      run: |
+        aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+    - name: Build Docker Image
+      run: |
+        docker buildx build --platform linux/amd64 -t taskmaster-repo-dev .
+    - name: Tag Docker Image
+      run: |
+        docker tag taskmaster-repo-dev:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/taskmaster-repo-dev:latest
+    - name: Push Docker Image to ECR
+      run: |
+        docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/taskmaster-repo-dev:latest
+    # Step to update the ECS Task Definition with the new image
+            
+    # Step to run terraform apply and trigger ECS service update with the new image
+    - name: Terraform Apply (ECS update)
+      run: |
+        cd deployment/terraform/us-west-1/us-west-1-dev
+        terraform apply -auto-approve
