@@ -1,0 +1,27 @@
+[
+  {
+    "title": "Finish homework",
+    "description": "Complete the math homework by 5 PM.",
+    "completed": false
+  },
+  {
+    "title": "Prepare dinner",
+    "description": "Cook a healthy dinner for the family.",
+    "completed": true
+  },
+  {
+    "title": "Buy groceries",
+    "description": "Pick up vegetables and snacks from the market.",
+    "completed": false
+  },
+  {
+    "title": "Clean the house",
+    "description": "Vacuum the floors and clean the kitchen.",
+    "completed": true
+  },
+  {
+    "title": "Attend team meeting",
+    "description": "Participate in the daily stand-up meeting at work.",
+    "completed": false
+  }
+]
