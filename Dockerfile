@@ -10,5 +10,12 @@ COPY application/target/application-0.0.1-SNAPSHOT.jar /app/application.jar
 # Expose port 8080 for the application
 EXPOSE 8080
 
+# Expose the Prometheus port
+EXPOSE 9090
+
+# Expose the Grafana port
+EXPOSE 3000
+
+
 # Run the application
 ENTRYPOINT ["java", "-jar", "/app/application.jar"]
