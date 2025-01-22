@@ -69,7 +69,13 @@ jobs:
       - name: Push Docker Image to ECR
         run: |
           docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/taskmaster-repo-dev:latest
+          
 
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: '1.5.5'
+          
       - name:  Terraform Init
         run: |
           cd deployment/terraform/us-west-1/us-west-1-dev
