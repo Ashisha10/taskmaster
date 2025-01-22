@@ -2,7 +2,7 @@ name: Deploy to Amazon ECS
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "test-dev" ]
 
 env:
   AWS_REGION: us-west-1                          # Set this to your AWS region
@@ -61,24 +61,24 @@ jobs:
       run: |
         cat <<EOL > ecs-task-definition.json
         {
-          "family": "taskmaster-task-prod",
-          "executionRoleArn": "arn:aws:iam::241533153259:role/ecs-task-execution-role",
-          "taskRoleArn": "arn:aws:iam::241533153259:role/ecs-task-role",
+          "family": "taskmaster-task-prod",  // Replace with your task family name
+          "executionRoleArn": "arn:aws:iam::241533153259:role/ecs-task-execution-role",  // Replace with your ECS task execution role ARN
+          "taskRoleArn": "arn:aws:iam::241533153259:role/ecs-task-role",  // Replace with your ECS task role ARN
           "networkMode": "awsvpc",
           "requiresCompatibilities": [
             "FARGATE"
           ],
-          "memory": "512",
-          "cpu": "256",
+          "memory": "512",  // Memory in MiB (512, 1024, etc.)
+          "cpu": "256",     // CPU in units (256, 512, etc.)
           "containerDefinitions": [
             {
-              "name": "taskmaster-container-prod",
-              "image": "${{ steps.build-image.outputs.image }}",
+              "name": "taskmaster-container-prod",  // Replace with your container name
+              "image": "${{ steps.build-image.outputs.image }}",  // Will be replaced by the actual image URL in the workflow
               "essential": true,
               "portMappings": [
                 {
-                  "containerPort": 8080,
-                  "hostPort": 8080,
+                  "containerPort": 8080,  
+                  "hostPort": 8080,      
                   "protocol": "tcp"
                 }
               ]
